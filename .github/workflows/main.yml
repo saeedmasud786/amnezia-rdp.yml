@@ -1,9 +1,9 @@
 name: Ubuntu XFCE RDP via AmneziaVPN
 
 on:
-  workflow_dispatch:    # run manually
+  workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'  # optional: runs every 6 hours
+    - cron: '0 */6 * * *'
 
 jobs:
   rdp:
@@ -20,7 +20,7 @@ jobs:
     - name: Install XFCE, xRDP, Firefox, and VS Code
       run: |
         sudo apt update
-        sudo apt install -y xfce4 xfce4-goodies xrdp dbus-x11 policykit-1 firefox docker.io docker-compose curl
+        sudo apt install -y xfce4 xfce4-goodies xrdp dbus-x11 policykit-1 firefox curl
         sudo snap install code --classic
         sudo systemctl enable xrdp
         sudo systemctl restart xrdp
@@ -41,6 +41,13 @@ jobs:
         Action=*
         ResultActive=yes
         EOF
+
+    # Docker is already installed on ubuntu-latest; no need to install docker.io.
+    # Just ensure Docker service is running.
+    - name: Ensure Docker is running
+      run: |
+        sudo systemctl start docker
+        sudo systemctl enable docker
 
     - name: Install AmneziaVPN Server
       run: |
