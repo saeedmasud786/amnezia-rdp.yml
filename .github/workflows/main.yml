@@ -1,0 +1,61 @@
+name: Ubuntu XFCE RDP via AmneziaVPN
+
+on:
+  workflow_dispatch:    # run manually
+  schedule:
+    - cron: '0 */6 * * *'  # optional: runs every 6 hours
+
+jobs:
+  rdp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Create RDP user
+      run: |
+        sudo useradd -m -s /bin/bash Masud
+        echo "Masud:${{ secrets.USER_PASSWORD }}" | sudo chpasswd
+        sudo usermod -aG sudo Masud
+
+    - name: Install XFCE, xRDP, Firefox, and VS Code
+      run: |
+        sudo apt update
+        sudo apt install -y xfce4 xfce4-goodies xrdp dbus-x11 policykit-1 firefox docker.io docker-compose curl
+        sudo snap install code --classic
+        sudo systemctl enable xrdp
+        sudo systemctl restart xrdp
+
+    - name: Configure XFCE session
+      run: |
+        echo "startxfce4" | sudo tee /home/Masud/.xsession
+        sudo mkdir -p /home/Masud/.config
+        sudo chown -R Masud:Masud /home/Masud
+        sudo chmod +x /home/Masud/.xsession
+
+    - name: Fix Polkit (no failsafe session)
+      run: |
+        sudo mkdir -p /etc/polkit-1/localauthority/50-local.d
+        cat <<EOF | sudo tee /etc/polkit-1/localauthority/50-local.d/45-allow.pkla
+        [Allow Masud]
+        Identity=unix-user:Masud
+        Action=*
+        ResultActive=yes
+        EOF
+
+    - name: Install AmneziaVPN Server
+      run: |
+        curl -fsSL https://install.amnezia.org | sudo bash
+
+    - name: Archive AmneziaVPN config
+      run: |
+        sudo tar -czvf amnezia-config.tar.gz /opt/amnezia/etc/
+      # upload as workflow artifact
+    - uses: actions/upload-artifact@v3
+      with:
+        name: amnezia-config
+        path: amnezia-config.tar.gz
+
+    - name: Keep runner alive for RDP session
+      run: |
+        echo "Runner is alive. Connect using RDP via your Amnezia VPN connection."
+        while true; do sleep 60; done
