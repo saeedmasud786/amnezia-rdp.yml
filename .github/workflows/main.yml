@@ -49,8 +49,8 @@ jobs:
     - name: Archive AmneziaVPN config
       run: |
         sudo tar -czvf amnezia-config.tar.gz /opt/amnezia/etc/
-      # upload as workflow artifact
-    - uses: actions/upload-artifact@v3
+
+    - uses: actions/upload-artifact@v4
       with:
         name: amnezia-config
         path: amnezia-config.tar.gz
